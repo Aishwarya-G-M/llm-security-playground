@@ -5,7 +5,7 @@ from app.security.llm_client import call_llm
 from app.security.prompt_inspector_adv import inspect_prompt
 from app.security.logger import log_request, get_logs
 from fastapi import FastAPI, HTTPException
-from app.security.attack_catalog import ATTACK_SCENARIOS
+from app.security.attack_catalog import ATTACK_PROMPTS
 
 app = FastAPI(
     title="LLM Security Playground",
@@ -83,8 +83,19 @@ async def fetch_logs():
 
 
 @app.get("/attacks")
-async def list_attacks():
-    return {"attacks": ATTACK_SCENARIOS, "total": len(ATTACK_SCENARIOS)}
+async def get_attacks(category: str = None, context: str = None):
+    """
+    Returns the curated attack prompt library.
+    Optional filters: category, context
+    """
+    results = ATTACK_PROMPTS
+
+    if category:
+        results = [a for a in results if a["category"] == category]
+    if context:
+        results = [a for a in results if a["context"] == context]
+
+    return {"attacks": results, "total": len(results)}
 
 @app.post("/attacks/run")
 async def run_attack(request: AttackRunRequest):
