@@ -1,5 +1,9 @@
 from typing import Optional
 
+# NOTE: This is the original rule-based inspector using hardcoded patterns.
+# Kept for reference to show evolution to the YAML-based pattern library.
+# See prompt_inspector_adv.py for the current implementation.
+
 # List of known prompt injection patterns
 INJECTION_PATTERNS: list[str] = [
     "ignore previous instructions",
