@@ -17,7 +17,7 @@ def call_llm(prompt : str, system_prompt: str = "You are a helpful assistant.") 
         """
         messages: list[ChatCompletionMessageParam] =[
                 {
-                    "role":"systems",
+                    "role":"system",
                     "content": system_prompt
                 },
                 {
