@@ -4,12 +4,17 @@ from pydantic import BaseModel
 from app.security.llm_client import call_llm
 from app.security.prompt_inspector_adv import inspect_prompt
 from app.security.logger import log_request, get_logs
+from fastapi import FastAPI, HTTPException
+from app.security.attack_catalog import ATTACK_PROMPTS
 
 app = FastAPI(
     title="LLM Security Playground",
     version="0.1.0",
     description="A Playground for testing LLM vulnerabilities"
 )
+
+class AttackRunRequest(BaseModel):
+    attack_name: str
 
 # ---- Request Model ---
 class PromptRequest(BaseModel):
@@ -75,3 +80,66 @@ async def chat(request: ChatRequest):
 @app.get("/logs")
 async def fetch_logs():
     return {"logs": get_logs(), "total": len(get_logs())}
+
+
+@app.get("/attacks")
+async def get_attacks(category: str = None, context: str = None):
+    """
+    Returns the curated attack prompt library.
+    Optional filters: category, context
+    """
+    results = ATTACK_PROMPTS
+
+    if category:
+        results = [a for a in results if a["category"] == category]
+    if context:
+        results = [a for a in results if a["context"] == context]
+
+    return {"attacks": results, "total": len(results)}
+
+@app.post("/attacks/run")
+async def run_attack(request: AttackRunRequest):
+    attack = next(
+        (item for item in ATTACK_SCENARIOS if item["attack_name"] == request.attack_name),
+        None
+    )
+
+    if not attack:
+        raise HTTPException(status_code=404, detail="Attack scenario not found")
+
+    inspection = inspect_prompt(attack["prompt"])
+
+    if not inspection["is_safe"]:
+        log_request(
+            endpoint="/attacks/run",
+            prompt=attack["prompt"],
+            is_safe=False,
+            reason=inspection["reason"]
+        )
+        return {
+            "attack_name": attack["attack_name"],
+            "category": attack["category"],
+            "blocked": True,
+            "reason": inspection["reason"],
+            "response": None
+        }
+
+    llm_response = call_llm(
+        prompt=attack["prompt"]
+    )
+
+    log_request(
+        endpoint="/attacks/run",
+        prompt=attack["prompt"],
+        is_safe=True,
+        reason=inspection["reason"],
+        response=llm_response
+    )
+
+    return {
+        "attack_name": attack["attack_name"],
+        "category": attack["category"],
+        "blocked": False,
+        "reason": None,
+        "response": llm_response
+    }
