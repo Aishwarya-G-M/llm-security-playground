@@ -3,6 +3,7 @@ from pydantic import BaseModel
 
 from app.security.llm_client import call_llm
 from app.security.prompt_inspector_adv import inspect_prompt
+from app.security.logger import log_request, get_logs
 
 app = FastAPI(
     title="LLM Security Playground",
@@ -26,6 +27,12 @@ async def health_check():
 @app.post("/analyze")
 async def analyze_prompt(request : PromptRequest):
     result = inspect_prompt(request.prompt)
+    log_request(
+        endpoint="/analyze",
+        prompt=request.prompt,
+        is_safe=result["is_safe"],
+        reason=result["reason"]
+    )
     return result
 
 @app.post("/chat")
@@ -34,6 +41,12 @@ async def chat(request: ChatRequest):
     inspection = inspect_prompt(request.prompt)
 
     if not inspection["is_safe"]:
+        log_request(
+            endpoint="/chat",
+            prompt=request.prompt,
+            is_safe=False,
+            reason=inspection["reason"]
+        )
         return {
             "blocked": True,
             "reason": inspection["reason"],
@@ -46,8 +59,19 @@ async def chat(request: ChatRequest):
         system_prompt=request.system_prompt
     )
 
+    log_request(
+        endpoint="/chat",
+        prompt=request.prompt,
+        is_safe=True,
+        reason=inspection["reason"],
+        response=llm_response
+    )
+
     return {
         "blocked": False,
         "response": llm_response,
         "reason": None
     }
+@app.get("/logs")
+async def fetch_logs():
+    return {"logs": get_logs(), "total": len(get_logs())}
