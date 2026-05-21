@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 
 from app.security.llm_client import call_llm
-from app.security.prompt_inspector import inspect_prompt
+from app.security.prompt_inspector_adv import inspect_prompt
 
 app = FastAPI(
     title="LLM Security Playground",

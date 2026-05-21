@@ -1,0 +1,35 @@
+# Payment & Transaction LLM Attack Patterns
+# Sources: OWASP AITG-APP-01, puppetry-detector (BSD-3)
+# Targets: Stripe, Wise, Revolut, Visa style LLM assistants
+
+patterns:
+
+  # --- Transaction Manipulation ---
+  - "(bypass|override|skip)\\s+(payment|transaction|transfer)\\s+(approval|verification|limit|check)"
+  - "(reverse|cancel|void)\\s+(a\\s+)?(transaction|payment|charge)\\s+(without|bypassing)\\s+(approval|verification)"
+  - "modify\\s+(the\\s+)?(transaction|payment|transfer)\\s+(amount|value|details)"
+  - "(approve|authorize)\\s+(this\\s+)?(transaction|payment|transfer)\\s+(without|bypassing)\\s+(checks|verification|approval)"
+
+  # --- Refund & Reversal Abuse ---
+  - "(process|initiate|force)\\s+(a\\s+)?(refund|chargeback|reversal)\\s+(without|bypassing)\\s+(approval|verification|checks)"
+  - "(duplicate|replay)\\s+(this\\s+)?(transaction|payment|request)"
+  - "submit\\s+(the\\s+same\\s+)?(payment|transaction|request)\\s+(again|multiple\\s+times|repeatedly)"
+
+  # --- Data Exfiltration ---
+  - "(extract|export|retrieve|dump)\\s+(all\\s+)?(payment|card|transaction)\\s+(data|records|history|details)"
+  - "show\\s+(me\\s+)?(all\\s+)?(stored|saved)\\s+(card|payment|billing)\\s+(details|numbers|information)"
+  - "reveal\\s+(the\\s+)?(card\\s+number|cvv|expiry|billing\\s+address)"
+
+  # --- Code Execution / Injection ---
+  - "import\\s+(os|subprocess|sys|socket)"
+  - "execute\\s+(this\\s+)?(script|code|command|query)"
+  - "(run|eval|exec)\\s*\\("
+
+  # --- Obfuscation Attempts ---
+  - "[A-Za-z0-9+/]{20,}={0,2}"
+  - "(?:[0-9a-fA-F]{2}\\s*){8,}"
+
+  # --- Role Hijack / Jailbreak ---
+  - "pretend\\s+(you\\s+are|to\\s+be)\\s+(a\\s+)?(payment\\s+processor|fraud\\s+detection\\s+system)"
+  - "act\\s+as\\s+(an?\\s+)?(unrestricted|unmonitored)\\s+(payment|transaction)\\s+(agent|system|processor)"
+  - "you\\s+are\\s+now\\s+an?\\s+(internal|trusted|admin)\\s+(payment|billing|finance)\\s+(agent|system|bot)"
