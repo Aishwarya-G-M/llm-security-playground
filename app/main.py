@@ -25,6 +25,10 @@ class AttackRunRequest(BaseModel):
     attack_name: str
 
 # --- Routes ---
+@app.get("/")
+def read_root():
+    return {"message": "API is running"}
+
 @app.get("/health")
 async def health_check():
     return {"status": "ok"}
