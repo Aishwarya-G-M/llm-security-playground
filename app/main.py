@@ -13,9 +13,6 @@ app = FastAPI(
     description="A Playground for testing LLM vulnerabilities"
 )
 
-class AttackRunRequest(BaseModel):
-    attack_name: str
-
 # ---- Request Model ---
 class PromptRequest(BaseModel):
     prompt : str
@@ -23,6 +20,9 @@ class PromptRequest(BaseModel):
 class ChatRequest(BaseModel):
     prompt : str
     system_prompt : str = "You are a helpful assistant"
+
+class AttackRunRequest(BaseModel):
+    attack_name: str
 
 # --- Routes ---
 @app.get("/health")
@@ -91,18 +91,15 @@ async def get_attacks(category: str = None, context: str = None):
     results = ATTACK_PROMPTS
 
     if category:
-        results = [a for a in results if a["category"] == category]
+        results = [a for a in results if a.get("category").lower() == category.lower()]
     if context:
-        results = [a for a in results if a["context"] == context]
+        results = [a for a in results if a.get("context").lower() == context.lower()]
 
     return {"attacks": results, "total": len(results)}
 
 @app.post("/attacks/run")
 async def run_attack(request: AttackRunRequest):
-    attack = next(
-        (item for item in ATTACK_SCENARIOS if item["attack_name"] == request.attack_name),
-        None
-    )
+    attack = next((item for item in ATTACK_PROMPTS if item.get("attack_name") == request.attack_name), None)
 
     if not attack:
         raise HTTPException(status_code=404, detail="Attack scenario not found")

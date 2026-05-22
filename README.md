@@ -1,3 +1,13 @@
+### Endpoints available
+/chat = normal app behavior.
+
+/analyze = inspect one prompt for safety.
+
+/attacks = curated library of known bad scenarios.
+
+/attacks/run = execute one of those scenarios and record the outcome.
+
+
 ### Feature 1 - Hardcoded prompt patterns
 - Prompt Injection Detector : A prompt injection attack is when a user tries to override the LLM's system instructions by embedding malicious instructions in their input.
   - Takes a user prompt as input
