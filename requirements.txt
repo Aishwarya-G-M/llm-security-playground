@@ -4,3 +4,4 @@ python-dotenv
 groq
 pyyaml
 pytest
+pydantic
