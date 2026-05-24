@@ -8,11 +8,11 @@ import glob
 
 def load_attack_catalog() -> list[dict]:
     catalog = []
-    data_dir = os.path.join(os.path.dirname(__file__), "..", "data")
+    data_dir = os.path.join(os.path.dirname(__file__), "data")
     for filepath in sorted(glob.glob(os.path.join(data_dir, "*.json"))):
         with open(filepath, "r") as f:
-            entires = json.load(f)
-            catalog.extend(entires)
+            entries = json.load(f)
+            catalog.extend(entries)
     return catalog
 
 ATTACK_PROMPTS: list[dict] = load_attack_catalog()
