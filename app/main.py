@@ -22,7 +22,7 @@ class ChatRequest(BaseModel):
     system_prompt : str = "You are a helpful assistant"
 
 class AttackRunRequest(BaseModel):
-    attack_name: str
+    id: str
 
 # --- Routes ---
 @app.get("/")
@@ -103,10 +103,10 @@ async def get_attacks(category: str = None, context: str = None, severity: str =
 
     return {"attacks": results, "total": len(results)}
 
-@app.get("/attacks/{attack_name}")
-async def get_attack_by_name(attack_name: str):
+@app.get("/attacks/{id}")
+async def get_attack_by_name(attack_id: str):
     attack = next(
-        (item for item in ATTACK_PROMPTS if item.get("attack_name", "").lower() == attack_name.lower()),
+        (item for item in ATTACK_PROMPTS if item.get("id", "").lower() == id.lower()),
         None
     )
     if not attack:
@@ -115,7 +115,7 @@ async def get_attack_by_name(attack_name: str):
 
 @app.post("/attacks/run")
 async def run_attack(request: AttackRunRequest):
-    attack = next((item for item in ATTACK_PROMPTS if item.get("attack_name") == request.attack_name), None)
+    attack = next((item for item in ATTACK_PROMPTS if item.get("id") == request.id), None)
 
     if not attack:
         raise HTTPException(status_code=404, detail="Attack scenario not found")
@@ -130,8 +130,11 @@ async def run_attack(request: AttackRunRequest):
             reason=inspection["reason"]
         )
         return {
-            "attack_name": attack["attack_name"],
+            "id": attack["id"],
             "category": attack["category"],
+            "context": attack.get("context"),
+            "severity": attack.get("severity"),
+            "owasp_ref": attack.get("owasp_ref"),
             "blocked": True,
             "reason": inspection["reason"],
             "response": None
@@ -150,9 +153,12 @@ async def run_attack(request: AttackRunRequest):
     )
 
     return {
-        "attack_name": attack["attack_name"],
+        "id": attack["id"],
         "category": attack["category"],
+        "context": attack.get("context"),
+        "severity": attack.get("severity"),
+        "owasp_ref": attack.get("owasp_ref"),
         "blocked": False,
-        "reason": None,
-        "response": llm_response
+        "reason": inspection["reason"],
+        "response": None
     }

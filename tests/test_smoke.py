@@ -31,7 +31,7 @@ def test_analyze_prompt():
 
 def test_run_attack_invalid_name():
     response = client.post("/attacks/run", json={
-        "attack_name": "does-not-exist"
+        "id": "does-not-exist"
     })
     assert response.status_code == 404
     assert response.json()["detail"] == "Attack scenario not found"
@@ -41,15 +41,16 @@ def test_run_attack_valid_name():
     attacks = attacks_response.json()["attacks"]
     assert len(attacks) > 0
 
-    attack_name = attacks[0]["attack_name"]
+    attack_id = attacks[0]["id"]
 
     response = client.post("/attacks/run", json={
-        "attack_name": attack_name
+        "id": attack_id
     })
     assert response.status_code == 200
 
     body = response.json()
-    assert "attack_name" in body
+    assert "id" in body
     assert "category" in body
-    assert "blocked" in body
-    assert "response" in body
+    assert "context" in body
+    assert "severity" in body
+    assert "owasp_ref" in body
