@@ -98,6 +98,8 @@ async def get_attacks(category: str = None, context: str = None):
         results = [a for a in results if a.get("category").lower() == category.lower()]
     if context:
         results = [a for a in results if a.get("context").lower() == context.lower()]
+    if severity:
+        results = [a for a in results if a.get("severity", "").lower() == severity.lower()]
 
     return {"attacks": results, "total": len(results)}
 
