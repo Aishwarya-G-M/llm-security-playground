@@ -98,12 +98,14 @@ async def get_attacks(category: str = None, context: str = None):
         results = [a for a in results if a.get("category").lower() == category.lower()]
     if context:
         results = [a for a in results if a.get("context").lower() == context.lower()]
+    if severity:
+        results = [a for a in results if a.get("severity", "").lower() == severity.lower()]
 
     return {"attacks": results, "total": len(results)}
 
 @app.post("/attacks/run")
 async def run_attack(request: AttackRunRequest):
-    attack = next((item for item in ATTACK_PROMPTS if item.get("category") == request.attack_name), None)
+    attack = next((item for item in ATTACK_PROMPTS if item.get("attack_name") == request.attack_name), None)
 
     if not attack:
         raise HTTPException(status_code=404, detail="Attack scenario not found")
