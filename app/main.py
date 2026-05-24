@@ -87,7 +87,7 @@ async def fetch_logs():
 
 
 @app.get("/attacks")
-async def get_attacks(category: str = None, context: str = None):
+async def get_attacks(category: str = None, context: str = None, severity: str = None):
     """
     Returns the curated attack prompt library.
     Optional filters: category, context
@@ -102,6 +102,16 @@ async def get_attacks(category: str = None, context: str = None):
         results = [a for a in results if a.get("severity", "").lower() == severity.lower()]
 
     return {"attacks": results, "total": len(results)}
+
+@app.get("/attacks/{attack_name}")
+async def get_attack_by_name(attack_name: str):
+    attack = next(
+        (item for item in ATTACK_PROMPTS if item.get("attack_name", "").lower() == attack_name.lower()),
+        None
+    )
+    if not attack:
+        raise HTTPException(status_code=404, detail="Attack scenario not found")
+    return attack
 
 @app.post("/attacks/run")
 async def run_attack(request: AttackRunRequest):
