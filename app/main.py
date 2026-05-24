@@ -1,4 +1,3 @@
-from fastapi import FastAPI
 from pydantic import BaseModel
 
 from app.security.llm_client import call_llm
@@ -103,10 +102,10 @@ async def get_attacks(category: str = None, context: str = None, severity: str =
 
     return {"attacks": results, "total": len(results)}
 
-@app.get("/attacks/{id}")
+@app.get("/attacks/{attack_id}")
 async def get_attack_by_name(attack_id: str):
     attack = next(
-        (item for item in ATTACK_PROMPTS if item.get("id", "").lower() == id.lower()),
+        (item for item in ATTACK_PROMPTS if item.get("id", "").lower() == attack_id.lower()),
         None
     )
     if not attack:
