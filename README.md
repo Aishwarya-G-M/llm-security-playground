@@ -89,7 +89,7 @@ The catalog file documents these sources:
     - `context`
     - `severity`
 - `POST /attacks/run`
-  - Executes one attack scenario from the catalog by `attack_name`.
+  - Executes one attack scenario from the catalog by `id`.
 
 ### Logs
 - `GET /logs`
@@ -142,7 +142,7 @@ curl "http://localhost:8000/attacks?category=prompt_injection&context=banking"
 curl -X POST "http://localhost:8000/attacks/run" \
   -H "Content-Type: application/json" \
   -d '{
-    "attack_name": "Prompt Override Attack"
+    "id": "Prompt Override Attack"
   }'
 ```
 
