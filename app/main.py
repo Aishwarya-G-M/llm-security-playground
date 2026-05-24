@@ -103,7 +103,7 @@ async def get_attacks(category: str = None, context: str = None):
 
 @app.post("/attacks/run")
 async def run_attack(request: AttackRunRequest):
-    attack = next((item for item in ATTACK_PROMPTS if item.get("attack_name") == request.attack_name), None)
+    attack = next((item for item in ATTACK_PROMPTS if item.get("category") == request.attack_name), None)
 
     if not attack:
         raise HTTPException(status_code=404, detail="Attack scenario not found")
