@@ -7,9 +7,11 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Initialize Groq client using the API key from .env
-groq_client = Groq(
-    api_key = os.getenv("GROQ_API_KEY"),
-)
+def get_groq_client():
+    api_key = os.getenv("GROQ_API_KEY")
+    if not api_key:
+        raise ValueError("GROQ_API_KEY is not set")
+    return Groq(api_key=api_key)
 
 def call_llm(prompt : str, system_prompt: str = "You are a helpful assistant.") -> str:
         """
@@ -26,6 +28,7 @@ def call_llm(prompt : str, system_prompt: str = "You are a helpful assistant.") 
                 }
             ]
 
+        groq_client = get_groq_client()
         chat_completion = groq_client.chat.completions.create(
             model="llama-3.1-8b-instant",
             messages=messages,
