@@ -5,6 +5,7 @@ from app.security.prompt_inspector_adv import inspect_prompt
 from app.security.logger import log_request, get_logs
 from fastapi import FastAPI, HTTPException
 from app.security.attack_catalog import ATTACK_PROMPTS
+from app.exceptions.llm_error_exceptions import LLMConfigurationError
 
 app = FastAPI(
     title="LLM Security Playground",
@@ -62,10 +63,13 @@ async def chat(request: ChatRequest):
         }
 
     # Step 2: Only reaches here is prompt is safe
-    llm_response = call_llm(
-        prompt=request.prompt,
-        system_prompt=request.system_prompt
-    )
+    try:
+        llm_response = call_llm(
+            prompt=request.prompt,
+            system_prompt=request.system_prompt
+        )
+    except LLMConfigurationError as e:
+        raise HTTPException(status_code=503, detail=str(e))
 
     log_request(
         endpoint="/chat",
@@ -103,7 +107,7 @@ async def get_attacks(category: str = None, context: str = None, severity: str =
     return {"attacks": results, "total": len(results)}
 
 @app.get("/attacks/{attack_id}")
-async def get_attack_by_name(attack_id: str):
+async def get_attack_by_id(attack_id: str):
     attack = next(
         (item for item in ATTACK_PROMPTS if item.get("id", "").lower() == attack_id.lower()),
         None
@@ -139,9 +143,12 @@ async def run_attack(request: AttackRunRequest):
             "response": None
         }
 
-    llm_response = call_llm(
-        prompt=attack["prompt"]
-    )
+    try:
+        llm_response = call_llm(
+            prompt=attack["prompt"]
+        )
+    except LLMConfigurationError as e:
+        raise HTTPException(status_code=503, detail=str(e))
 
     log_request(
         endpoint="/attacks/run",
@@ -159,5 +166,5 @@ async def run_attack(request: AttackRunRequest):
         "owasp_ref": attack.get("owasp_ref"),
         "blocked": False,
         "reason": inspection["reason"],
-        "response": None
+        "response": llm_response
     }

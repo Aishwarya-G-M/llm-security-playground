@@ -2,6 +2,7 @@ import os
 from groq import Groq
 from groq.types.chat import ChatCompletionMessageParam
 from dotenv import load_dotenv
+from app.exceptions.llm_error_exceptions import LLMConfigurationError
 
 # loads variables from .env file into the environment
 load_dotenv()
@@ -10,7 +11,9 @@ load_dotenv()
 def get_groq_client():
     api_key = os.getenv("GROQ_API_KEY")
     if not api_key:
-        raise ValueError("GROQ_API_KEY is not set")
+        raise LLMConfigurationError(
+            "GROQ_API_KEY is not configured. Add it to your .env file or environment variables."
+        )
     return Groq(api_key=api_key)
 
 def call_llm(prompt : str, system_prompt: str = "You are a helpful assistant.") -> str:
