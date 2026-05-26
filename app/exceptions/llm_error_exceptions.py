@@ -1,0 +1,2 @@
+class LLMConfigurationError(Exception):
+    pass

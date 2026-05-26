@@ -142,9 +142,30 @@ curl "http://localhost:8000/attacks?category=prompt_injection&context=banking"
 curl -X POST "http://localhost:8000/attacks/run" \
   -H "Content-Type: application/json" \
   -d '{
-    "id": "Prompt Override Attack"
+    "id": "bp_004"
   }'
 ```
+## Environment variables
+
+This project uses Groq for LLM-backed responses.
+
+To run endpoints that call the LLM (`/chat` and some `/attacks/run` flows), create a local `.env` file from the example template:
+
+```bash
+cp .env.example .env
+```
+
+Then add your own Groq API key:
+
+```env
+GROQ_API_KEY=your_groq_api_key_here
+```
+
+Notes:
+- Do not commit `.env` to Git.
+- `.env.example` is safe to commit because it contains no real secrets.
+- If `GROQ_API_KEY` is missing, attack inspection endpoints still work, but LLM-backed calls will return a clear configuration error.
+- If you run Groq-backed integration tests in GitHub Actions, add `GROQ_API_KEY` as a repository secret in your fork or repository.
 
 ## Running locally
 
@@ -162,7 +183,6 @@ Once the container is running, open the API docs:
 
 - The attack catalog is file-backed and loaded into memory at startup.
 - No pagination yet on the `/attacks` endpoint.
-- No dedicated attack detail endpoint yet.
 - This is a learning playground, not a production security system.
 
 ## Future improvements
