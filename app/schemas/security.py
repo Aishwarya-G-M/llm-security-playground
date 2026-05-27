@@ -13,8 +13,8 @@ class SecurityVerdict(BaseModel):
     allowed: bool
     action: PolicyAction
     risk_score: int = Field(ge=0, le=10)
-    reasons: List[str] = []
-    matched_rules: List[str] = []
+    reasons: List[str] = Field(default_factory=list)
+    matched_rules: List[str] = Field(default_factory=list)
     inspector_used: str
 
 

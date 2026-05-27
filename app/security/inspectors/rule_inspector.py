@@ -1,9 +1,8 @@
-from abc import ABC
 import re
 
 from app.schemas.security import SecurityVerdict
 from app.security.inspectors.base import BaseInspector
-from app.security.policy import build_block_verdict, build_allow_verdict
+from app.security.policy import build_allow_verdict, build_block_verdict
 
 
 class RuleInspector(BaseInspector):
@@ -23,8 +22,8 @@ class RuleInspector(BaseInspector):
 
         if matched_rules:
             return build_block_verdict(
-                inspector_used = "rule_inspector",
-                risk_score = 8,
+                inspector_used="rule_inspector",
+                risk_score=8,
                 reasons=["Potential prompt injection pattern detected"],
                 matched_rules=matched_rules,
             )
@@ -32,5 +31,5 @@ class RuleInspector(BaseInspector):
         return build_allow_verdict(
             inspector_used="rule_inspector",
             risk_score=1,
-            reasons=["No known prompt injection patterns detected"]
+            reasons=["No known prompt injection patterns detected"],
         )
