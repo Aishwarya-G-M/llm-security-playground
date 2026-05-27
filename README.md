@@ -1,16 +1,21 @@
-# LLM Security Playground
+# Secure LLM Gateway
 
-A lightweight playground for learning and testing common LLM security vulnerabilities.
+- Secure LLM Gateway is a FastAPI-based proxy that protects LLM applications by scanning prompts and model responses, applying security policies, and blocking or sanitizing unsafe interactions before they can affect users or downstream systems.
+- This project demonstrates how a security gateway can mitigate or reduce several OWASP-style LLM application risks through request inspection, output inspection, policy enforcement, and runtime controls.
 
-This project lets you:
-- Inspect prompts for unsafe or suspicious patterns.
-- Run a guarded chat flow with prompt inspection before the LLM is called.
-- Explore a curated attack library for red-team style testing.
-- Execute attack scenarios and observe whether the guardrail blocks them.
+## Directly detects / enforces against:
 
-## Why this project exists
+- Prompt Injection
 
-LLM applications are vulnerable to attacks such as prompt injection, instruction override, and jailbreak attempts. This playground is a small, hands-on environment for understanding those risks and experimenting with simple defensive patterns.
+- Sensitive Information Disclosure
+
+- Improper Output Handling
+
+- System Prompt Leakage
+
+- Excessive Agency, by requiring policy checks before actions/tools are allowed
+
+- Unbounded Consumption, through rate limits, token limits, and request controls
 
 ## Features
 
