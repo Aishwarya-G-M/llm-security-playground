@@ -1,6 +1,4 @@
 import os
-from groq import Groq
-from groq.types.chat import ChatCompletionMessageParam
 from dotenv import load_dotenv
 from app.exceptions.llm_error_exceptions import LLMConfigurationError
 

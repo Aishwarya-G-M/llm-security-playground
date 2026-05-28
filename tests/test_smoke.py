@@ -26,8 +26,8 @@ def test_analyze_prompt():
     assert response.status_code == 200
 
     body = response.json()
-    assert "is_safe" in body
-    assert "reason" in body
+    assert "action" in body
+    assert "allowed" in body
 
 def test_run_attack_invalid_name():
     response = client.post("/attacks/run", json={
