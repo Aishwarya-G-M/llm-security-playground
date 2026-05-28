@@ -1,26 +1,46 @@
 category: unsafe_output_handling
 patterns:
   - id: html_script_injection
-    pattern: "<script[^>]*>"
+    pattern: '<script[^>]*>'
     description: "Output contains script tag unsafe for rendering"
     severity: 9
 
+  - id: html_iframe_embed
+    pattern: '<(iframe|object|embed)[^>]*>'
+    description: "Output contains embedded active HTML content unsafe for rendering"
+    severity: 8
+
   - id: sql_command_pattern
-    pattern: "(drop\\s+table|delete\\s+from|insert\\s+into|update\\s+\\w+\\s+set)"
+    pattern: '(drop\s+table|delete\s+from|insert\s+into|update\s+\w+\s+set|alter\s+table|truncate\s+table)'
     description: "Output contains SQL commands unsafe for downstream execution"
     severity: 8
 
   - id: shell_command_pattern
-    pattern: "(rm\\s+-rf|curl\\s+http|wget\\s+http|bash\\s+-c|eval\\s+)"
+    pattern: '(rm\s+-rf|curl\s+https?://|wget\s+https?://|bash\s+-c|sh\s+-c|powershell\s+-|eval\s+|chmod\s+\+x)'
     description: "Output contains shell commands unsafe for execution"
     severity: 9
 
   - id: markdown_link_injection
-    pattern: "\\[.*\\]\\(javascript:"
+    pattern: '\[[^\]]+\]\(javascript:[^)]+\)'
     description: "Output contains javascript: markdown link injection"
     severity: 8
 
   - id: html_event_handler
-    pattern: "on(click|load|error|mouseover)\\s*="
+    pattern: 'on(click|load|error|mouseover|focus|submit)\s*='
     description: "Output contains HTML event handler unsafe for rendering"
+    severity: 8
+
+  - id: data_uri_script
+    pattern: 'data:text/html|data:application/javascript'
+    description: "Output contains dangerous data URI content"
+    severity: 8
+
+  - id: credential_like_output
+    pattern: '(api[_ -]?key|secret[_ -]?key|access[_ -]?token|bearer\s+[A-Za-z0-9._~+/-]+=*)'
+    description: "Output may contain leaked credentials or tokens"
+    severity: 10
+
+  - id: unsafe_bypass_language
+    pattern: '(ignore\s+(previous|prior)\s+(instructions|messages|history)|bypass\s+(safety|security|guardrails?|restrictions?))'
+    description: "Output repeats or endorses unsafe bypass language"
     severity: 8

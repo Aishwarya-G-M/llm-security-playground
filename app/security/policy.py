@@ -30,3 +30,12 @@ def build_block_verdict(
         matched_rules=matched_rules or [],
         inspector_used=inspector_used,
     )
+
+def resolve_action(max_severity: int) -> tuple[bool, PolicyAction]:
+    if max_severity >= 9:
+        return False, PolicyAction.BLOCK
+    if max_severity >= 7:
+        return False, PolicyAction.REVIEW
+    if max_severity >= 6:
+        return False, PolicyAction.REDACT
+    return True, PolicyAction.ALLOW

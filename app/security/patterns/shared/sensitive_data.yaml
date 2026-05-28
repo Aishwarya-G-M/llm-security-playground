@@ -1,26 +1,36 @@
 category: sensitive_data
 patterns:
   - id: customer_data_request
-    pattern: "show\\s+(me\\s+)?customer\\s+(data|records|details)"
+    pattern: 'show\s+(me\s+)?customer\s+(data|records|details)'
     description: "Attempts to access customer data"
     severity: 9
 
   - id: credentials_extraction
-    pattern: "reveal\\s+(account|card|token|password|secret|api\\s*key)\\s*(number|details|data|value)?"
+    pattern: 'reveal\s+(account|card|token|password|secret|api\s*key|credential)\s*(number|details|data|value)?'
     description: "Attempts to extract sensitive credentials or identifiers"
     severity: 10
 
   - id: bulk_data_dump
-    pattern: "dump\\s+(all\\s+)?(user|customer|account)\\s+data"
+    pattern: 'dump\s+(all\s+)?(user|customer|account|transaction|client)\s+data'
     description: "Attempts bulk sensitive data extraction"
     severity: 10
 
   - id: pii_extraction
-    pattern: "(ssn|social\\s*security|aadhaar|passport|tax\\s*id)\\s*(number|details)?"
-    description: "Attempts to extract personally identifiable information"
+    pattern: '(ssn|social\s*security|aadhaar|passport|tax\s*id|pan\s*number|credit\s*card|cvv)\s*(number|details)?'
+    description: "Attempts to extract personally identifiable or regulated information"
     severity: 10
 
   - id: database_credentials_request
-    pattern: "database\\s+(password|credentials|connection\\s*string)"
+    pattern: 'database\s+(password|credentials|connection\s*string|dsn|uri)'
     description: "Attempts to retrieve database access credentials"
     severity: 10
+
+  - id: secret_material_request
+    pattern: '(private\s*key|secret\s*key|signing\s*key|jwt\s*secret|access\s*token|refresh\s*token)'
+    description: "Attempts to retrieve secret key material or tokens"
+    severity: 10
+
+  - id: internal_record_access
+    pattern: '(show|dump|export)\s+(all\s+)?(internal|private|confidential)\s+(records|data|documents|messages)'
+    description: "Attempts to access private internal records"
+    severity: 9

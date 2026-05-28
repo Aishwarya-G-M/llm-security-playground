@@ -1,7 +1,8 @@
 from pydantic import BaseModel
 
-from app.schemas.security import SecurityVerdict
-from app.security.inspectors.rule_inspector import RuleInspector
+from app.gateway.service import GatewayInspector
+from app.schemas.api import PromptRequest, AttackRunRequest
+from app.schemas.gateway import GatewayResponse
 from app.security.llm_client import call_llm
 from app.security.prompt_inspector_adv import inspect_prompt
 from app.security.logger import log_request, get_logs
@@ -15,17 +16,6 @@ app = FastAPI(
     description="A Playground for testing LLM vulnerabilities"
 )
 
-# ---- Request Model ---
-class PromptRequest(BaseModel):
-    prompt : str
-
-class ChatRequest(BaseModel):
-    prompt : str
-    system_prompt : str = "You are a helpful assistant"
-
-class AttackRunRequest(BaseModel):
-    id: str
-
 # --- Routes ---
 @app.get("/")
 def read_root():
@@ -35,51 +25,22 @@ def read_root():
 async def health_check():
     return {"status": "ok"}
 
-@app.post("/analyze", response_model=SecurityVerdict)
+@app.post("/analyze", response_model=GatewayResponse,response_model_exclude_none=True)
 async def analyze_prompt(request : PromptRequest):
-    inspector = RuleInspector()
-    return inspector.inspect_input(request.prompt)
+    gateway = GatewayInspector()
+    security_verdict_input = gateway.process_input(request)
+    return GatewayResponse(
+        input_verdict=security_verdict_input
+    )
 
-@app.post("/chat")
-async def chat(request: ChatRequest):
-    # Step 1:run guardrail before sending it to LLM
-    inspection = inspect_prompt(request.prompt)
-
-    if not inspection["is_safe"]:
-        log_request(
-            endpoint="/chat",
-            prompt=request.prompt,
-            is_safe=False,
-            reason=inspection["reason"]
-        )
-        return {
-            "blocked": True,
-            "reason": inspection["reason"],
-            "response": None
-        }
-
-    # Step 2: Only reaches here is prompt is safe
+@app.post("/chat", response_model=GatewayResponse, response_model_exclude_none=True)
+async def chat(request: PromptRequest):
     try:
-        llm_response = call_llm(
-            prompt=request.prompt,
-            system_prompt=request.system_prompt
-        )
+        gateway = GatewayInspector()
+        return gateway.process_chat_input(request)
     except LLMConfigurationError as e:
         raise HTTPException(status_code=503, detail=str(e))
 
-    log_request(
-        endpoint="/chat",
-        prompt=request.prompt,
-        is_safe=True,
-        reason=inspection["reason"],
-        response=llm_response
-    )
-
-    return {
-        "blocked": False,
-        "response": llm_response,
-        "reason": None
-    }
 @app.get("/logs")
 async def fetch_logs():
     return {"logs": get_logs(), "total": len(get_logs())}

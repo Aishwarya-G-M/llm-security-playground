@@ -1,21 +1,31 @@
 category: prompt_leakage
 patterns:
   - id: system_prompt_extraction
-    pattern: "reveal\\s+(your\\s+)?system\\s+prompt"
+    pattern: '(reveal|show|print|display|dump|output)\s+(your\s+)?system\s+prompt'
     description: "Attempts to extract the system prompt"
     severity: 9
 
   - id: internal_instructions_extraction
-    pattern: "show\\s+(me\\s+)?(your\\s+)?internal\\s+instructions"
+    pattern: '(show|reveal|print|display)\s+(me\s+)?(your\s+)?internal\s+instructions'
     description: "Attempts to expose internal instructions"
     severity: 9
 
   - id: system_message_dump
-    pattern: "print\\s+(the\\s+)?full\\s+system\\s+message"
+    pattern: 'print\s+(the\s+)?full\s+system\s+message'
     description: "Attempts to dump full system configuration"
     severity: 9
 
   - id: hidden_prompt_request
-    pattern: "(display|output|show)\\s+(your\\s+)?(initial|hidden|secret)\\s+(prompt|instruction)"
-    description: "Attempts to retrieve hidden initialization instructions"
+    pattern: '(display|output|show|reveal)\s+(your\s+)?(initial|hidden|secret|developer|internal)\s+(prompt|instruction|message|rules)'
+    description: "Attempts to retrieve hidden initialization or developer instructions"
     severity: 9
+
+  - id: config_exfiltration_request
+    pattern: '(show|reveal|print|dump)\s+(the\s+)?(configuration|config|policy|guardrail|setup)'
+    description: "Attempts to expose hidden model configuration or policy"
+    severity: 8
+
+  - id: chain_of_thought_request
+    pattern: '(show|reveal|print|output)\s+(your\s+)?(chain\s+of\s+thought|reasoning|hidden\s+reasoning)'
+    description: "Attempts to expose hidden reasoning or internal deliberation"
+    severity: 8
