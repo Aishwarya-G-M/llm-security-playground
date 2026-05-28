@@ -1,0 +1,8 @@
+shared_categories:
+  - prompt_leakage
+  - sensitive_data
+  - tool_abuse
+
+stage_categories:
+  - unsafe_output_handling
+  - action_validation

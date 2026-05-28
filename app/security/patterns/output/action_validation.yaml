@@ -1,0 +1,31 @@
+category: action_validation
+patterns:
+  - id: payment_approval_action
+    pattern: "approve\\s+(this\\s+)?payment"
+    description: "Output proposes payment approval requiring review"
+    severity: 9
+
+  - id: refund_issuance_action
+    pattern: "issue\\s+(a\\s+)?refund"
+    description: "Output proposes refund action requiring review"
+    severity: 8
+
+  - id: credential_reset_action
+    pattern: "reset\\s+(the\\s+)?(user\\s+)?password"
+    description: "Output proposes credential reset requiring review"
+    severity: 9
+
+  - id: account_control_action
+    pattern: "(disable|suspend|delete)\\s+(the\\s+)?account"
+    description: "Output proposes account control action requiring review"
+    severity: 8
+
+  - id: privileged_access_grant
+    pattern: "grant\\s+(admin|root|elevated)\\s+(access|privileges|permissions)"
+    description: "Output proposes privileged access modification requiring review"
+    severity: 10
+
+  - id: data_export_action
+    pattern: "export\\s+(all\\s+)?(customer|user|transaction)\\s+data"
+    description: "Output proposes bulk data export requiring review"
+    severity: 9

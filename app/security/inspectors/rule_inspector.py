@@ -1,35 +1,125 @@
 import re
+from pathlib import Path
+import yaml
 
 from app.schemas.security import SecurityVerdict
 from app.security.inspectors.base import BaseInspector
 from app.security.policy import build_allow_verdict, build_block_verdict
 
+PATTERNS_DIR = Path(__file__).resolve().parent.parent / "patterns"
+
+def _normalize_text(text: str) -> str:
+    normalized_text = re.sub(r' +',' ',text).strip()
+    return re.sub(r'\n+','\n',normalized_text).lower()
+
+def _load_yaml_file(file_path: Path) -> dict:
+    with file_path.open("r", encoding="utf-8") as f:
+        return yaml.safe_load(f) or {}
+
+def _load_manifest(file_name: str) -> dict:
+    return _load_yaml_file(PATTERNS_DIR / file_name)
+
+def _load_patterns(file_name: str) -> list[dict]:
+    base_path = Path(__file__).resolve().parent.parent / "patterns"
+    file_path = base_path / file_name
+
+    with open(file_path, "r", encoding="utf-8") as f:
+        data = yaml.safe_load(f) or {}
+
+    return data.get("patterns", [])
+
+def _load_category_patterns(directory_name: str, category: str) -> list[dict]:
+    file_path = PATTERNS_DIR / directory_name / f"{category}.yaml"
+    data = _load_yaml_file(file_path)
+
+    file_category = data.get("category", category)
+    patterns = data.get("patterns", [])
+
+    normalized_patterns = []
+    for item in patterns:
+        normalized_patterns.append(
+            {
+                "id": item.get("id", "unknown"),
+                "pattern": item["pattern"],
+                "description": item.get("description", "Matched security rule"),
+                "severity": item.get("severity", 5),
+                "category": item.get("category", file_category),
+                "source_file": file_path.name,
+            }
+        )
+
+    return normalized_patterns
+
+def _load_patterns_for_stage(manifest_name: str) -> list[dict]:
+    manifest = _load_manifest(manifest_name)
+    all_patterns = []
+
+    for category in manifest.get("shared_categories", []):
+        all_patterns.extend(_load_category_patterns("shared", category))
+
+    for category in manifest.get("stage_categories", []):
+        if "input" in manifest_name:
+            all_patterns.extend(_load_category_patterns("input", category))
+        else:
+            all_patterns.extend(_load_category_patterns("output", category))
+
+    return all_patterns
+
+def _scan_patterns(text: str, patterns: list[dict]) -> tuple[list[str], list[str], int]:
+    matched_rules = []
+    reasons = []
+    max_severity = 0
+
+    for item in patterns:
+        pattern = item["pattern"]
+        description = item["description"]
+        severity = item["severity"]
+        category = item["category"]
+        rule_id = item.get("id", "unknown")
+
+        if re.search(pattern, text):
+            matched_rules.append(f"{category}:{rule_id}")
+            reasons.append(description)
+            max_severity = max(max_severity, severity)
+
+    return matched_rules, reasons, max_severity
+
+INPUT_PATTERNS = _load_patterns_for_stage("input_manifest.yaml")
+OUTPUT_PATTERNS = _load_patterns_for_stage("output_manifest.yaml")
 
 class RuleInspector(BaseInspector):
-    INJECTION_PATTERNS = [
-        r"ignore\s+(all\s+)?previous\s+instructions",
-        r"forget\s+(all\s+)?previous\s+instructions",
-        r"reveal\s+(your\s+)?system\s+prompt",
-        r"bypass\s+security",
-    ]
-
-    def inspect_text(self, text: str) -> SecurityVerdict:
-        matched_rules = []
-
-        for pattern in self.INJECTION_PATTERNS:
-            if re.search(pattern, text, re.IGNORECASE):
-                matched_rules.append(pattern)
+    def inspect_input(self, text: str) -> SecurityVerdict:
+        normalized_text = _normalize_text(text)
+        matched_rules, reasons, max_severity = _scan_patterns(normalized_text, INPUT_PATTERNS)
 
         if matched_rules:
             return build_block_verdict(
                 inspector_used="rule_inspector",
-                risk_score=8,
-                reasons=["Potential prompt injection pattern detected"],
+                risk_score=max_severity,
+                reasons=reasons,
                 matched_rules=matched_rules,
             )
 
         return build_allow_verdict(
             inspector_used="rule_inspector",
             risk_score=1,
-            reasons=["No known prompt injection patterns detected"],
+            reasons=["No known unsafe input patterns detected"],
+        )
+
+    def inspect_output(self, text: str) -> SecurityVerdict:
+        normalized_text = _normalize_text(text)
+        matched_rules, reasons, max_severity = _scan_patterns(normalized_text, OUTPUT_PATTERNS)
+
+        if matched_rules:
+            return build_block_verdict(
+                inspector_used="rule_inspector",
+                risk_score=max_severity,
+                reasons=reasons,
+                matched_rules=matched_rules,
+            )
+
+        return build_allow_verdict(
+            inspector_used="rule_inspector",
+            risk_score=1,
+            reasons=["No known unsafe output patterns detected"],
         )

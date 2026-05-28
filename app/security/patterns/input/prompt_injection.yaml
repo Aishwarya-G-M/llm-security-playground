@@ -1,0 +1,31 @@
+category: prompt_injection
+patterns:
+  - id: instruction_override
+    pattern: "ignore\\s+(all\\s+)?(previous|prior)\\s+instructions"
+    description: "Attempts to override prior instructions"
+    severity: 8
+
+  - id: instruction_reset
+    pattern: "forget\\s+(all\\s+)?(previous|prior)\\s+instructions"
+    description: "Attempts to reset model behavior"
+    severity: 8
+
+  - id: jailbreak_unrestricted
+    pattern: "act\\s+as\\s+(if\\s+)?you\\s+have\\s+no\\s+restrictions"
+    description: "Attempts jailbreak-style unrestricted behavior"
+    severity: 8
+
+  - id: security_bypass
+    pattern: "bypass\\s+(security|safety|filter|guardrail)"
+    description: "Attempts to bypass security controls"
+    severity: 9
+
+  - id: role_confusion
+    pattern: "you\\s+are\\s+now\\s+(a\\s+)?(different|new|unrestricted)\\s+(assistant|ai|model)"
+    description: "Attempts to redefine model role or constraints"
+    severity: 8
+
+  - id: policy_override
+    pattern: "(disable|turn\\s+off|remove)\\s+(your\\s+)?(safety|content|security)\\s+(policy|filter|restriction)"
+    description: "Attempts to disable safety policies"
+    severity: 9

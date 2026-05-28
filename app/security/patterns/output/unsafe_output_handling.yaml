@@ -1,0 +1,26 @@
+category: unsafe_output_handling
+patterns:
+  - id: html_script_injection
+    pattern: "<script[^>]*>"
+    description: "Output contains script tag unsafe for rendering"
+    severity: 9
+
+  - id: sql_command_pattern
+    pattern: "(drop\\s+table|delete\\s+from|insert\\s+into|update\\s+\\w+\\s+set)"
+    description: "Output contains SQL commands unsafe for downstream execution"
+    severity: 8
+
+  - id: shell_command_pattern
+    pattern: "(rm\\s+-rf|curl\\s+http|wget\\s+http|bash\\s+-c|eval\\s+)"
+    description: "Output contains shell commands unsafe for execution"
+    severity: 9
+
+  - id: markdown_link_injection
+    pattern: "\\[.*\\]\\(javascript:"
+    description: "Output contains javascript: markdown link injection"
+    severity: 8
+
+  - id: html_event_handler
+    pattern: "on(click|load|error|mouseover)\\s*="
+    description: "Output contains HTML event handler unsafe for rendering"
+    severity: 8

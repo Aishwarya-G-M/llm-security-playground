@@ -9,11 +9,11 @@ from pathlib import Path
 # --- Load patterns from YAML files at module startup ---
 def _load_patterns(filename : str) -> list[re.Pattern]:
     """
-    Loads regex patterns from a YAML file in the patterns/ directory.
+    Loads regex patterns from a YAML file in the patterns/domain directory.
     Compiles each pattern with IGNORECASE flag.
     """
 
-    path = Path(__file__).parent / "patterns" / filename
+    path = Path(__file__).parent / "patterns/domain" / filename
     with open(path, "r") as file:
         data = yaml.safe_load(file)
     return [re.compile(pattern, re.IGNORECASE) for pattern in data["patterns"]]
