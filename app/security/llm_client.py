@@ -1,5 +1,8 @@
 import os
 from dotenv import load_dotenv
+from groq import Groq
+from groq.types.chat import ChatCompletionMessageParam
+
 from app.exceptions.llm_error_exceptions import LLMConfigurationError
 
 # loads variables from .env file into the environment

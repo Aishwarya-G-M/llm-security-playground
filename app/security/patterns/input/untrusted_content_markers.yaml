@@ -1,21 +1,31 @@
 category: untrusted_content_markers
 patterns:
   - id: external_content_reference
-    pattern: "the\\s+following\\s+(webpage|document|email)\\s+says"
+    pattern: 'the\s+following\s+(webpage|website|page|document|email|pdf|file|message)\s+says'
     description: "References potentially untrusted external content"
     severity: 6
 
   - id: embedded_instruction_elevation
-    pattern: "use\\s+the\\s+instructions\\s+below"
-    description: "Attempts to elevate embedded instructions from external content"
-    severity: 7
+    pattern: '(use|follow|obey)\s+the\s+instructions\s+(below|above|in\s+the\s+document|in\s+the\s+content)'
+    description: "Attempts to elevate embedded instructions from untrusted content"
+    severity: 8
 
   - id: external_source_indicator
-    pattern: "copied\\s+from\\s+(a\\s+)?(website|page|document|email)"
+    pattern: 'copied\s+from\s+(a\s+)?(website|webpage|page|document|email|pdf|file|repo)'
     description: "Signals externally sourced content with injection risk"
     severity: 6
 
   - id: untrusted_paste_marker
-    pattern: "pasted\\s+from|according\\s+to\\s+(this\\s+)?(url|link|site)"
-    description: "Indicates pasted content that may contain indirect injection"
+    pattern: 'pasted\s+from|according\s+to\s+(this\s+)?(url|link|site|page|document|email|pdf)'
+    description: "Indicates pasted external content that may contain indirect injection"
     severity: 6
+
+  - id: retrieved_context_authority
+    pattern: '(treat|use)\s+(the\s+)?(document|email|webpage|retrieved\s+content|context)\s+as\s+(instructions|authoritative\s+instructions)'
+    description: "Attempts to treat untrusted retrieved content as authoritative instructions"
+    severity: 8
+
+  - id: hidden_instruction_hint
+    pattern: '(hidden|embedded)\s+(instruction|prompt|command)'
+    description: "Mentions hidden or embedded instructions in external content"
+    severity: 7

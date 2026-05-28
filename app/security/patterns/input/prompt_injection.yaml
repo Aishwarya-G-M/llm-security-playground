@@ -1,31 +1,51 @@
 category: prompt_injection
 patterns:
   - id: instruction_override
-    pattern: "ignore\\s+(all\\s+)?(previous|prior)\\s+instructions"
-    description: "Attempts to override prior instructions"
+    pattern: 'ignore\s+(all\s+)?(previous|prior|above|earlier)\s+(instructions|prompts|messages|inputs|user\s+inputs|conversation\s+history)'
+    description: "Attempts to override prior instructions or context"
     severity: 8
 
   - id: instruction_reset
-    pattern: "forget\\s+(all\\s+)?(previous|prior)\\s+instructions"
-    description: "Attempts to reset model behavior"
-    severity: 8
-
-  - id: jailbreak_unrestricted
-    pattern: "act\\s+as\\s+(if\\s+)?you\\s+have\\s+no\\s+restrictions"
-    description: "Attempts jailbreak-style unrestricted behavior"
+    pattern: 'forget\s+(all\s+)?(previous|prior|above|earlier)\s+(instructions|prompts|messages|inputs|user\s+inputs|conversation\s+history)'
+    description: "Attempts to reset model behavior or discard prior context"
     severity: 8
 
   - id: security_bypass
-    pattern: "bypass\\s+(security|safety|filter|guardrail)"
+    pattern: 'bypass\s+(all\s+the\s+)?(security|safety|filter|filters|guardrail|guardrails|restriction|restrictions|policy|policies)'
     description: "Attempts to bypass security controls"
     severity: 9
 
+  - id: policy_override
+    pattern: '(disable|turn\s+off|remove|ignore)\s+(your\s+)?(safety|content|security|policy|guardrail|restriction)s?'
+    description: "Attempts to disable or ignore safety policies"
+    severity: 9
+
+  - id: jailbreak_unrestricted
+    pattern: 'act\s+as\s+(if\s+)?you\s+have\s+no\s+(restrictions|rules|limits|policies|guardrails)'
+    description: "Attempts jailbreak-style unrestricted behavior"
+    severity: 8
+
   - id: role_confusion
-    pattern: "you\\s+are\\s+now\\s+(a\\s+)?(different|new|unrestricted)\\s+(assistant|ai|model)"
+    pattern: 'you\s+are\s+now\s+(a\s+)?(different|new|unrestricted|developer|system)\s+(assistant|ai|model|agent)'
     description: "Attempts to redefine model role or constraints"
     severity: 8
 
-  - id: policy_override
-    pattern: "(disable|turn\\s+off|remove)\\s+(your\\s+)?(safety|content|security)\\s+(policy|filter|restriction)"
-    description: "Attempts to disable safety policies"
+  - id: dan_style_jailbreak
+    pattern: '\b(DAN|developer\s+mode|jailbreak\s+mode|unfiltered\s+mode|god\s+mode)\b'
+    description: "References common jailbreak personas or unrestricted modes"
+    severity: 8
+
+  - id: system_prompt_exfiltration
+    pattern: '(reveal|show|print|display|repeat|output|dump)\s+(your\s+)?(system|developer|hidden|internal)\s+(prompt|instruction|message|rules)'
+    description: "Attempts to extract hidden system or developer instructions"
+    severity: 9
+
+  - id: hidden_instructions_request
+    pattern: '(what|tell\s+me\s+what)\s+(are\s+)?(your\s+)?(hidden|internal|secret|developer)\s+(instructions|rules|prompt|message)'
+    description: "Attempts to retrieve hidden assistant instructions"
+    severity: 9
+
+  - id: tool_or_privilege_override
+    pattern: '(grant|give|enable)\s+(admin|root|system|tool|plugin)\s+(access|permissions)|run\s+this\s+without\s+approval'
+    description: "Attempts to escalate privileges or bypass approval controls"
     severity: 9

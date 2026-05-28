@@ -4,29 +4,23 @@ import yaml
 
 from app.schemas.security import SecurityVerdict
 from app.security.inspectors.base import BaseInspector
-from app.security.policy import build_allow_verdict, build_block_verdict
+from app.security.policy import resolve_action
 
 PATTERNS_DIR = Path(__file__).resolve().parent.parent / "patterns"
 
 def _normalize_text(text: str) -> str:
-    normalized_text = re.sub(r' +',' ',text).strip()
-    return re.sub(r'\n+','\n',normalized_text).lower()
+    normalized_text = re.sub(r" +", " ", text).strip()
+    return re.sub(r"\n+", "\n", normalized_text).lower()
+
 
 def _load_yaml_file(file_path: Path) -> dict:
     with file_path.open("r", encoding="utf-8") as f:
         return yaml.safe_load(f) or {}
 
+
 def _load_manifest(file_name: str) -> dict:
     return _load_yaml_file(PATTERNS_DIR / file_name)
 
-def _load_patterns(file_name: str) -> list[dict]:
-    base_path = Path(__file__).resolve().parent.parent / "patterns"
-    file_path = base_path / file_name
-
-    with open(file_path, "r", encoding="utf-8") as f:
-        data = yaml.safe_load(f) or {}
-
-    return data.get("patterns", [])
 
 def _load_category_patterns(directory_name: str, category: str) -> list[dict]:
     file_path = PATTERNS_DIR / directory_name / f"{category}.yaml"
@@ -50,6 +44,7 @@ def _load_category_patterns(directory_name: str, category: str) -> list[dict]:
 
     return normalized_patterns
 
+
 def _load_patterns_for_stage(manifest_name: str) -> list[dict]:
     manifest = _load_manifest(manifest_name)
     all_patterns = []
@@ -65,6 +60,7 @@ def _load_patterns_for_stage(manifest_name: str) -> list[dict]:
 
     return all_patterns
 
+
 def _scan_patterns(text: str, patterns: list[dict]) -> tuple[list[str], list[str], int]:
     matched_rules = []
     reasons = []
@@ -77,49 +73,71 @@ def _scan_patterns(text: str, patterns: list[dict]) -> tuple[list[str], list[str
         category = item["category"]
         rule_id = item.get("id", "unknown")
 
-        if re.search(pattern, text):
-            matched_rules.append(f"{category}:{rule_id}")
-            reasons.append(description)
-            max_severity = max(max_severity, severity)
+        try:
+            if re.search(pattern, text):
+                matched_rules.append(f"{category}:{rule_id}")
+                reasons.append(description)
+                max_severity = max(max_severity, severity)
+        except re.error:
+            raise
 
     return matched_rules, reasons, max_severity
 
+
+def _build_verdict_from_matches(
+    *,
+    inspector_used: str,
+    matched_rules: list[str],
+    reasons: list[str],
+    max_severity: int,
+    no_match_reason: str,
+) -> SecurityVerdict:
+    if matched_rules:
+        allowed, action = resolve_action(max_severity)
+        return SecurityVerdict(
+            allowed=allowed,
+            action=action,
+            risk_score=max_severity,
+            reasons=reasons,
+            matched_rules=matched_rules,
+            inspector_used=inspector_used,
+        )
+
+    return SecurityVerdict(
+        allowed=True,
+        action="allow",
+        risk_score=1,
+        reasons=[no_match_reason],
+        matched_rules=[],
+        inspector_used=inspector_used,
+    )
+
+
 INPUT_PATTERNS = _load_patterns_for_stage("input_manifest.yaml")
 OUTPUT_PATTERNS = _load_patterns_for_stage("output_manifest.yaml")
+
 
 class RuleInspector(BaseInspector):
     def inspect_input(self, text: str) -> SecurityVerdict:
         normalized_text = _normalize_text(text)
         matched_rules, reasons, max_severity = _scan_patterns(normalized_text, INPUT_PATTERNS)
 
-        if matched_rules:
-            return build_block_verdict(
-                inspector_used="rule_inspector",
-                risk_score=max_severity,
-                reasons=reasons,
-                matched_rules=matched_rules,
-            )
-
-        return build_allow_verdict(
+        return _build_verdict_from_matches(
             inspector_used="rule_inspector",
-            risk_score=1,
-            reasons=["No known unsafe input patterns detected"],
+            matched_rules=matched_rules,
+            reasons=reasons,
+            max_severity=max_severity,
+            no_match_reason="No known unsafe input patterns detected",
         )
 
     def inspect_output(self, text: str) -> SecurityVerdict:
         normalized_text = _normalize_text(text)
         matched_rules, reasons, max_severity = _scan_patterns(normalized_text, OUTPUT_PATTERNS)
 
-        if matched_rules:
-            return build_block_verdict(
-                inspector_used="rule_inspector",
-                risk_score=max_severity,
-                reasons=reasons,
-                matched_rules=matched_rules,
-            )
-
-        return build_allow_verdict(
+        return _build_verdict_from_matches(
             inspector_used="rule_inspector",
-            risk_score=1,
-            reasons=["No known unsafe output patterns detected"],
+            matched_rules=matched_rules,
+            reasons=reasons,
+            max_severity=max_severity,
+            no_match_reason="No known unsafe output patterns detected",
         )
