@@ -1,0 +1,21 @@
+category: untrusted_content_markers
+patterns:
+  - id: external_content_reference
+    pattern: "the\\s+following\\s+(webpage|document|email)\\s+says"
+    description: "References potentially untrusted external content"
+    severity: 6
+
+  - id: embedded_instruction_elevation
+    pattern: "use\\s+the\\s+instructions\\s+below"
+    description: "Attempts to elevate embedded instructions from external content"
+    severity: 7
+
+  - id: external_source_indicator
+    pattern: "copied\\s+from\\s+(a\\s+)?(website|page|document|email)"
+    description: "Signals externally sourced content with injection risk"
+    severity: 6
+
+  - id: untrusted_paste_marker
+    pattern: "pasted\\s+from|according\\s+to\\s+(this\\s+)?(url|link|site)"
+    description: "Indicates pasted content that may contain indirect injection"
+    severity: 6

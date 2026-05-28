@@ -16,6 +16,3 @@ class SecurityVerdict(BaseModel):
     reasons: List[str] = Field(default_factory=list)
     matched_rules: List[str] = Field(default_factory=list)
     inspector_used: str
-
-
-

@@ -1,5 +1,7 @@
 from pydantic import BaseModel
 
+from app.schemas.security import SecurityVerdict
+from app.security.inspectors.rule_inspector import RuleInspector
 from app.security.llm_client import call_llm
 from app.security.prompt_inspector_adv import inspect_prompt
 from app.security.logger import log_request, get_logs
@@ -33,16 +35,10 @@ def read_root():
 async def health_check():
     return {"status": "ok"}
 
-@app.post("/analyze")
+@app.post("/analyze", response_model=SecurityVerdict)
 async def analyze_prompt(request : PromptRequest):
-    result = inspect_prompt(request.prompt)
-    log_request(
-        endpoint="/analyze",
-        prompt=request.prompt,
-        is_safe=result["is_safe"],
-        reason=result["reason"]
-    )
-    return result
+    inspector = RuleInspector()
+    return inspector.inspect_input(request.prompt)
 
 @app.post("/chat")
 async def chat(request: ChatRequest):

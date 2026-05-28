@@ -1,0 +1,8 @@
+shared_categories:
+  - prompt_leakage
+  - sensitive_data
+  - tool_abuse
+
+stage_categories:
+  - prompt_injection
+  - untrusted_content_markers

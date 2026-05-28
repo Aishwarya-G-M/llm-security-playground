@@ -1,0 +1,26 @@
+category: tool_abuse
+patterns:
+  - id: unauthorized_email_action
+    pattern: "send\\s+(an\\s+)?email\\s+to"
+    description: "Attempts external communication through email"
+    severity: 7
+
+  - id: privileged_tool_invocation
+    pattern: "call\\s+(the\\s+)?admin\\s+tool"
+    description: "Attempts privileged tool execution"
+    severity: 9
+
+  - id: unauthorized_payment_action
+    pattern: "transfer\\s+funds\\s+to"
+    description: "Attempts unauthorized financial transfer"
+    severity: 10
+
+  - id: data_deletion_attempt
+    pattern: "delete\\s+(all\\s+)?(user|customer|account|transaction)\\s+(data|records)"
+    description: "Attempts unauthorized data deletion"
+    severity: 10
+
+  - id: webhook_invocation
+    pattern: "trigger\\s+(the\\s+)?webhook"
+    description: "Attempts to trigger external system integration"
+    severity: 7
