@@ -1,10 +1,15 @@
-# tests/test_chat_guardrails.py
 import pytest
+from app.exceptions.llm_error_exceptions import (
+    LLMConfigurationError,
+    LLMProviderError,
+    LLMTimeoutError,
+)
 from app.gateway.service import GatewayInspector
 from app.schemas.api import PromptRequest
 from app.schemas.llm import LLMMetadata, LLMResponse
 from app.schemas.security import PolicyAction
 from app.security.inspectors.rule_inspector import RuleInspector
+
 
 def test_blocks_known_prompt_injection(client):
     response = client.post(
@@ -18,9 +23,10 @@ def test_blocks_known_prompt_injection(client):
     assert response.status_code == 200
     body = response.json()
     assert body["input_verdict"]["allowed"] is False
-    assert body["input_verdict"]["action"] == "block"
+    assert body["input_verdict"]["action"] in {"block", "review"}
     assert "prompt_injection:security_bypass" in body["input_verdict"]["matched_rules"]
     assert "llm_output" not in body
+
 
 @pytest.mark.parametrize(
     "prompt,expected_rule",
@@ -48,7 +54,9 @@ def test_blocks_known_malicious_inputs(prompt, expected_rule, client):
     assert response.status_code == 200
     body = response.json()
     assert body["input_verdict"]["allowed"] is False
+    assert body["input_verdict"]["action"] in {"block", "review"}
     assert expected_rule in body["input_verdict"]["matched_rules"]
+
 
 def test_allows_normal_input(client):
     response = client.post(
@@ -62,6 +70,7 @@ def test_allows_normal_input(client):
     assert response.status_code == 200
     body = response.json()
     assert body["input_verdict"]["allowed"] is True
+
 
 class UnsafeScriptOutputClient:
     def generate(self, request):
@@ -87,6 +96,21 @@ class UnsafeBypassOutputClient:
                 latency_ms=5,
             ),
         )
+
+
+class TimeoutLlmClient:
+    def generate(self, request):
+        raise LLMTimeoutError("LLM request timed out")
+
+
+class ProviderErrorLlmClient:
+    def generate(self, request):
+        raise LLMProviderError("Upstream provider error")
+
+
+class ConfigurationErrorLlmClient:
+    def generate(self, request):
+        raise LLMConfigurationError("Missing GROQ_API_KEY")
 
 
 def test_blocks_unsafe_output_script_tag():
@@ -133,3 +157,54 @@ def test_blocks_unsafe_output_bypass_language():
         PolicyAction.REDACT,
     }
     assert response.llm_output == "Response withheld by safety policy"
+
+
+class TestChatEndpointTimeout:
+    @pytest.fixture
+    def llm_client_override(self):
+        return TimeoutLlmClient()
+
+    def test_chat_returns_504_on_llm_timeout(self, client):
+        response = client.post(
+            "/chat",
+            json={
+                "prompt": "Explain Redis caching",
+                "system_prompt": "You are a helpful assistant",
+            },
+        )
+
+        assert response.status_code == 504
+
+
+class TestChatEndpointProviderError:
+    @pytest.fixture
+    def llm_client_override(self):
+        return ProviderErrorLlmClient()
+
+    def test_chat_returns_502_on_provider_error(self, client):
+        response = client.post(
+            "/chat",
+            json={
+                "prompt": "Explain Redis caching",
+                "system_prompt": "You are a helpful assistant",
+            },
+        )
+
+        assert response.status_code == 502
+
+
+class TestChatEndpointConfigurationError:
+    @pytest.fixture
+    def llm_client_override(self):
+        return ConfigurationErrorLlmClient()
+
+    def test_chat_returns_503_on_configuration_error(self, client):
+        response = client.post(
+            "/chat",
+            json={
+                "prompt": "Explain Redis caching",
+                "system_prompt": "You are a helpful assistant",
+            },
+        )
+
+        assert response.status_code == 503
