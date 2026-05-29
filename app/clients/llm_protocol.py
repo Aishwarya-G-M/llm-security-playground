@@ -1,4 +1,5 @@
 from typing import Protocol
+
 from app.schemas.llm import LLMRequest, LLMResponse
 
 

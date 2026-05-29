@@ -3,7 +3,7 @@ from app.schemas.api import PromptRequest
 from app.schemas.gateway import GatewayResponse
 from app.schemas.security import SecurityVerdict, PolicyAction
 from app.security.inspectors.rule_inspector import RuleInspector
-
+from app.schemas.llm import LLMRequest
 
 class GatewayInspector:
     def __init__(
@@ -30,11 +30,12 @@ class GatewayInspector:
                 llm_output=None,
             )
 
-        llm_response = self.llm_client.generate(
-            prompt_request.prompt,
-            prompt_request.system_prompt,
+        llm_request = LLMRequest(
+            prompt=prompt_request.prompt,
+            system_prompt=prompt_request.system_prompt or "You are a helpful assistant.",
         )
 
+        llm_response = self.llm_client.generate(llm_request)
         output_security_verdict = self.process_llm_output(llm_response.content)
 
         if output_security_verdict.action == PolicyAction.ALLOW:

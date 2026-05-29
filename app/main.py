@@ -2,12 +2,18 @@ from app.gateway.service import GatewayInspector
 from app.schemas.api import PromptRequest, AttackRunRequest
 from app.schemas.gateway import GatewayResponse
 from app.clients.llm_client import get_llm_client
+from app.schemas.llm import LLMRequest
+from app.schemas.security import SecurityVerdict, PolicyAction
 from app.security.inspectors.rule_inspector import RuleInspector
 from app.security.prompt_inspector_adv import inspect_prompt
 from app.security.logger import log_request, get_logs
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
 from app.security.attack_catalog import ATTACK_PROMPTS
-from app.exceptions.llm_error_exceptions import LLMConfigurationError
+from app.exceptions.llm_error_exceptions import (
+    LLMConfigurationError,
+    LLMProviderError,
+    LLMTimeoutError,
+)
 
 app = FastAPI(
     title="LLM Security Playground",
@@ -32,21 +38,26 @@ def read_root():
 async def health_check():
     return {"status": "ok"}
 
-@app.post("/analyze", response_model=GatewayResponse,response_model_exclude_none=True)
-async def analyze_prompt(request : PromptRequest):
-    gateway = GatewayInspector()
-    security_verdict_input = gateway.process_input(request)
-    return GatewayResponse(
-        input_verdict=security_verdict_input
-    )
+@app.post("/analyze", response_model=SecurityVerdict)
+async def analyze_prompt(
+    request: PromptRequest,
+    gateway: GatewayInspector = Depends(get_gateway_inspector),
+):
+    return gateway.process_input(request)
 
 @app.post("/chat", response_model=GatewayResponse, response_model_exclude_none=True)
-async def chat(request: PromptRequest):
+async def chat(
+    request: PromptRequest,
+    gateway: GatewayInspector = Depends(get_gateway_inspector),
+):
     try:
-        gateway = GatewayInspector()
         return gateway.process_chat_input(request)
     except LLMConfigurationError as e:
         raise HTTPException(status_code=503, detail=str(e))
+    except LLMTimeoutError as e:
+        raise HTTPException(status_code=504, detail=str(e))
+    except LLMProviderError as e:
+        raise HTTPException(status_code=502, detail=str(e))
 
 @app.get("/logs")
 async def fetch_logs():
@@ -81,20 +92,28 @@ async def get_attack_by_id(attack_id: str):
     return attack
 
 @app.post("/attacks/run")
-async def run_attack(request: AttackRunRequest):
+async def run_attack(
+    request: AttackRunRequest,
+    gateway: GatewayInspector = Depends(get_gateway_inspector),
+):
     attack = next((item for item in ATTACK_PROMPTS if item.get("id") == request.id), None)
 
     if not attack:
         raise HTTPException(status_code=404, detail="Attack scenario not found")
 
-    inspection = inspect_prompt(attack["prompt"])
+    prompt_request = PromptRequest(
+        prompt=attack["prompt"],
+        system_prompt="You are a helpful assistant.",
+    )
 
-    if not inspection["is_safe"]:
+    inspection = gateway.process_input(prompt_request)
+
+    if inspection.action in {PolicyAction.BLOCK, PolicyAction.REVIEW}:
         log_request(
             endpoint="/attacks/run",
             prompt=attack["prompt"],
             is_safe=False,
-            reason=inspection["reason"]
+            reason=", ".join(inspection.reasons) if inspection.reasons else "Blocked by policy",
         )
         return {
             "id": attack["id"],
@@ -103,23 +122,29 @@ async def run_attack(request: AttackRunRequest):
             "severity": attack.get("severity"),
             "owasp_ref": attack.get("owasp_ref"),
             "blocked": True,
-            "reason": inspection["reason"],
-            "response": None
+            "reason": inspection.reasons,
+            "response": None,
         }
 
     try:
-        llm_response = call_llm(
-            prompt=attack["prompt"]
+        llm_request = LLMRequest(
+            prompt=attack["prompt"],
+            system_prompt="You are a helpful assistant.",
         )
+        llm_response = gateway.llm_client.generate(llm_request)
     except LLMConfigurationError as e:
         raise HTTPException(status_code=503, detail=str(e))
+    except LLMTimeoutError as e:
+        raise HTTPException(status_code=504, detail=str(e))
+    except LLMProviderError as e:
+        raise HTTPException(status_code=502, detail=str(e))
 
     log_request(
         endpoint="/attacks/run",
         prompt=attack["prompt"],
         is_safe=True,
-        reason=inspection["reason"],
-        response=llm_response
+        reason=", ".join(inspection.reasons) if inspection.reasons else "Allowed",
+        response=llm_response.content,
     )
 
     return {
@@ -129,6 +154,6 @@ async def run_attack(request: AttackRunRequest):
         "severity": attack.get("severity"),
         "owasp_ref": attack.get("owasp_ref"),
         "blocked": False,
-        "reason": inspection["reason"],
-        "response": llm_response
+        "reason": inspection.reasons,
+        "response": llm_response.content,
     }
