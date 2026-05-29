@@ -1,9 +1,8 @@
-from pydantic import BaseModel
-
 from app.gateway.service import GatewayInspector
 from app.schemas.api import PromptRequest, AttackRunRequest
 from app.schemas.gateway import GatewayResponse
-from app.security.llm_client import call_llm
+from app.clients.llm_client import get_llm_client
+from app.security.inspectors.rule_inspector import RuleInspector
 from app.security.prompt_inspector_adv import inspect_prompt
 from app.security.logger import log_request, get_logs
 from fastapi import FastAPI, HTTPException
@@ -15,6 +14,14 @@ app = FastAPI(
     version="0.1.0",
     description="A Playground for testing LLM vulnerabilities"
 )
+
+def get_gateway_inspector() -> GatewayInspector:
+    rule_inspector = RuleInspector()
+    llm_client = get_llm_client()
+    return GatewayInspector(
+        rule_inspector=rule_inspector,
+        llm_client=llm_client,
+    )
 
 # --- Routes ---
 @app.get("/")
