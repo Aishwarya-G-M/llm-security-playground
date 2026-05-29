@@ -1,6 +1,4 @@
 # tests/test_chat_guardrails.py
-from fastapi.testclient import TestClient
-from app.main import app
 import pytest
 from app.gateway.service import GatewayInspector
 from app.schemas.api import PromptRequest
@@ -8,9 +6,7 @@ from app.schemas.llm import LLMMetadata, LLMResponse
 from app.schemas.security import PolicyAction
 from app.security.inspectors.rule_inspector import RuleInspector
 
-client = TestClient(app)
-
-def test_blocks_known_prompt_injection():
+def test_blocks_known_prompt_injection(client):
     response = client.post(
         "/chat",
         json={
@@ -43,7 +39,7 @@ def test_blocks_known_prompt_injection():
         ),
     ],
 )
-def test_blocks_known_malicious_inputs(prompt, expected_rule):
+def test_blocks_known_malicious_inputs(prompt, expected_rule, client):
     response = client.post(
         "/chat",
         json={"prompt": prompt, "system_prompt": "You are a helpful assistant"},
@@ -54,7 +50,7 @@ def test_blocks_known_malicious_inputs(prompt, expected_rule):
     assert body["input_verdict"]["allowed"] is False
     assert expected_rule in body["input_verdict"]["matched_rules"]
 
-def test_allows_normal_input():
+def test_allows_normal_input(client):
     response = client.post(
         "/chat",
         json={
