@@ -5,7 +5,6 @@ from app.clients.llm_client import get_llm_client
 from app.schemas.llm import LLMRequest
 from app.schemas.security import SecurityVerdict, PolicyAction
 from app.security.inspectors.rule_inspector import RuleInspector
-from app.security.prompt_inspector_adv import inspect_prompt
 from app.security.logger import log_request, get_logs
 from fastapi import FastAPI, HTTPException, Depends
 from app.security.attack_catalog import ATTACK_PROMPTS
@@ -16,9 +15,9 @@ from app.exceptions.llm_error_exceptions import (
 )
 
 app = FastAPI(
-    title="LLM Security Playground",
-    version="0.1.0",
-    description="A Playground for testing LLM vulnerabilities"
+    title="Secure LLM Gateway",
+    version="0.2.0",
+    description="A secure gateway for inspecting, testing, and protecting LLM interactions"
 )
 
 def get_gateway_inspector() -> GatewayInspector:
